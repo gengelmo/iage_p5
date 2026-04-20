@@ -194,10 +194,7 @@ def load_stock_data(data_dir: str, num_partitions: int):
 
 
 def add_cyclic_features(df):
-    """Add cyclic features for date components and target variable."""
-    
-    # Extract year, month, day
-    df = df.withColumn("DateYear", F.year("Date").cast(T.DoubleType()))
+    """Add cyclic features for date components (month and day only)."""
     
     # Cyclic encoding for month (0-11 range for trigonometry)
     month_normalized = (F.month("Date") - 1) / 12.0 * 2 * math.pi
@@ -213,14 +210,36 @@ def add_cyclic_features(df):
 
 
 def add_target_variable(df):
-    """Add Close20 target: closing price 20 days in the future."""
+    """Add LogReturn20 target: log-return of closing price 20 days in the future."""
     
     window_spec = F.Window.partitionBy("Symbol").orderBy("Date")
     
-    # Create lead to get price 20 days ahead
+    # Create lead to get closing price 20 days ahead and calculate log-return
     df = df.withColumn(
-        "Close20",
-        F.lead("Close", 20).over(window_spec)
+        "LogReturn20",
+        F.log(F.lead("Close", 20).over(window_spec) / F.col("Close"))
+    )
+    
+    return df
+
+
+def add_past_returns(df):
+    """Add past return features at 3, 5, and 10 days normalized by current close."""
+    
+    window_spec = F.Window.partitionBy("Symbol").orderBy("Date")
+    
+    # Calculate log-returns relative to current close price at lags 3, 5, 10 days
+    df = df.withColumn(
+        "PastReturn3",
+        F.log(F.lag("Close", 3).over(window_spec) / F.col("Close"))
+    )
+    df = df.withColumn(
+        "PastReturn5",
+        F.log(F.lag("Close", 5).over(window_spec) / F.col("Close"))
+    )
+    df = df.withColumn(
+        "PastReturn10",
+        F.log(F.lag("Close", 10).over(window_spec) / F.col("Close"))
     )
     
     return df
@@ -230,12 +249,12 @@ def prepare_features_and_target(df):
     """Select and prepare features and target for modeling."""
     
     feature_cols = [
-        "DateYear", "DateMonthSin", "DateMonthCos", "DateDaySin", "DateDayCos",
-        "Open", "High", "Low", "Close", "Volume", "OpenInt"
+        "DateMonthSin", "DateMonthCos", "DateDaySin", "DateDayCos",
+        "PastReturn3", "PastReturn5", "PastReturn10"
     ]
     
     # Remove rows with null target (last 20 days of each stock)
-    df = df.dropna(subset=["Close20"])
+    df = df.dropna(subset=["LogReturn20"])
     
     # Remove rows with any null features
     df = df.dropna(subset=feature_cols)
@@ -258,9 +277,9 @@ def prepare_features_and_target(df):
     df = scaler_model.transform(df)
     
     # Select final columns
-    df = df.select("scaledFeatures", "Close20")
+    df = df.select("scaledFeatures", "LogReturn20")
     df = df.withColumnRenamed("scaledFeatures", "features")
-    df = df.withColumnRenamed("Close20", "label")
+    df = df.withColumnRenamed("LogReturn20", "label")
     
     return df
 
@@ -463,29 +482,33 @@ def main():
         stock_data = add_cyclic_features(stock_data)
         
         # Add target variable
-        print("STEP 3: Adding target variable (Close20)...")
+        print("STEP 3: Adding target variable (LogReturn20)...")
         stock_data = add_target_variable(stock_data)
         
+        # Add past return features
+        print("STEP 4: Adding past return features (3, 5, 10 days)...")
+        stock_data = add_past_returns(stock_data)
+        
         # Prepare features
-        print("STEP 4: Preparing features and scaling...")
+        print("STEP 5: Preparing features and scaling...")
         df_prepared = prepare_features_and_target(stock_data)
         
         # Train/Test split
-        print("STEP 5: Creating train/test split (80/20)...")
+        print("\nSTEP 6: Creating train/test split (80/20)...")
         train_df, test_df = create_train_test_split(df_prepared, test_ratio=0.2, seed=42)
         train_df.cache()
         test_df.cache()
         print(f"  Train size: {train_df.count()}, Test size: {test_df.count()}")
         
         # Grid searches
-        print("\nSTEP 6: Running grid search for Linear Regression...")
+        print("\nSTEP 7: Running grid search for Linear Regression...")
         lr_results = train_linear_regression_grid_search(train_df, test_df, seeds=[42, 123, 456])
         
-        print("\nSTEP 7: Running grid search for Generalized Linear Regression...")
+        print("\nSTEP 8: Running grid search for Generalized Linear Regression...")
         glr_results = train_glr_grid_search(train_df, test_df, seeds=[42, 123, 456])
         
         # Save results
-        print("\nSTEP 8: Saving results...")
+        print("\nSTEP 9: Saving results...")
         all_results = lr_results + glr_results
         save_results_to_csv(all_results, args.output_dir)
         
