@@ -1,0 +1,108 @@
+Archivos sin datos detectados: 32
+
+==================== EDA ====================
+Shape: (14887665, 8)
+Columnas: ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'OpenInt', 'Symbol']
+
+Head:
+        Date    Open    High     Low   Close    Volume  OpenInt Symbol
+0 1999-11-18  30.713  33.754  27.002  29.702  66277506        0      a
+1 1999-11-19  28.986  29.027  26.872  27.257  16142920        0      a
+2 1999-11-22  27.886  29.702  27.044  29.702   6970266        0      a
+3 1999-11-23  28.688  29.446  27.002  27.002   6332082        0      a
+4 1999-11-24  27.083  28.309  27.002  27.717   5132147        0      a
+
+Tail:
+               Date   Open     High      Low  Close  Volume  OpenInt Symbol
+14887660 2017-11-06  10.42  11.5400  10.4200  11.19  977948        0   zyne
+14887661 2017-11-07  11.30  11.4200  10.6700  10.83  451210        0   zyne
+14887662 2017-11-08  10.70  11.0600  10.3500  10.90  336449        0   zyne
+14887663 2017-11-09  11.00  11.8563  10.9700  11.60  463067        0   zyne
+14887664 2017-11-10  11.68  13.1500  11.3043  12.46  885587        0   zyne
+
+Información general:
+<class 'pandas.DataFrame'>
+RangeIndex: 14887665 entries, 0 to 14887664
+Data columns (total 8 columns):
+ #   Column   Dtype
+---  ------   -----
+ 0   Date     datetime64[us]
+ 1   Open     float64
+ 2   High     float64
+ 3   Low      float64
+ 4   Close    float64
+ 5   Volume   int64
+ 6   OpenInt  int64
+ 7   Symbol   str
+dtypes: datetime64[us](1), float64(4), int64(2), str(1)
+memory usage: 908.7 MB
+
+Nulos por columna:
+Date       0
+Open       0
+High       0
+Low        0
+Close      0
+Volume     0
+OpenInt    0
+Symbol     0
+/home/hex/eu/uni/iage/iage_prac_5/analisis_exploratorio_hector.py:117: Pandas4Warning: For backward compatibility, 'str' dtypes are included by select_dtypes when 'object' dtype is specified. This behavior is deprecated and will be removed in a future version. Explicitly pass 'str' to `include` to select them, or to `exclude` to remove them and silence this warning.
+See https://pandas.pydata.org/docs/user_guide/migration-3-strings.html#string-migration-select-dtypes for details on how to write code that works with pandas 2 and 3.
+  object_columns = df.select_dtypes(include="object")
+
+Cadenas vacías por columna:
+Symbol    0
+
+Valores duplicados:
+0
+
+Rango temporal:
+  - Valor mínimo de la columna Date: 1962-01-02 00:00:00
+  - Valor máximo de la columna Date: 2017-11-10 00:00:00
+  - Fechas nulas tras parseo: 0
+
+Top 10 archivos que antes empiezan:
+  - ge.us.txt: 1962-01-02
+  - ibm.us.txt: 1962-01-02
+  - aa.us.txt: 1970-01-02
+  - aep.us.txt: 1970-01-02
+  - ba.us.txt: 1970-01-02
+  - c.us.txt: 1970-01-02
+  - cat.us.txt: 1970-01-02
+  - cnp.us.txt: 1970-01-02
+  - cvx.us.txt: 1970-01-02
+  - dis.us.txt: 1970-01-02
+
+Top 10 archivos que más tarde empiezan:
+  - ppdf.us.txt: 2017-11-10
+  - omfs.us.txt: 2017-11-10
+  - omfl.us.txt: 2017-11-10
+  - jhsc.us.txt: 2017-11-10
+  - flmx.us.txt: 2017-11-10
+  - eryp.us.txt: 2017-11-10
+  - ccv-cl.us.txt: 2017-11-10
+  - band.us.txt: 2017-11-10
+  - vtc.us.txt: 2017-11-09
+  - sogo.us.txt: 2017-11-09
+
+Conteo de archivos por mes-año de finalización:
+  - 2017-11: 7053
+  - 2017-10: 99
+  - 2017-09: 8
+  - 2017-08: 2
+  - 2017-06: 1
+
+Resumen estadístico:
+              count unique  top   freq                        mean                  min                  25%                  50%                  75%                  max             std
+Date       14887665    NaN  NaN    NaN  2010-06-19 22:22:30.382939  1962-01-02 00:00:00  2007-11-29 00:00:00  2012-02-17 00:00:00  2015-05-21 00:00:00  2017-11-10 00:00:00             NaN
+Open     14887665.0    NaN  NaN    NaN                30385.382296                  0.0                 7.75                15.68                 28.9         1423712891.0  4202500.953751
+High     14887665.0    NaN  NaN    NaN                 31212.46732                0.004                7.884               15.919               29.279        1442048636.45  4323485.549288
+Low      14887665.0    NaN  NaN    NaN                29361.760762                 -1.0                 7.61               15.431                 28.5        1362117843.98  4046981.003571
+Close    14887665.0    NaN  NaN    NaN                30245.218347               0.0037                 7.75                15.68              28.8999        1437986240.44  4180590.065664
+Volume   14887665.0    NaN  NaN    NaN              1585730.317615                  0.0              32800.0             192266.0             891786.0         2423735131.0  7635186.712274
+OpenInt  14887665.0    NaN  NaN    NaN                         0.0                  0.0                  0.0                  0.0                  0.0                  0.0             0.0
+Symbol     14887665   7163  ibm  14059                         NaN                  NaN                  NaN                  NaN                  NaN                  NaN             NaN
+
+Número de símbolos únicos:
+7163
+

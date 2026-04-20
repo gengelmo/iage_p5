@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+export SPARK_MASTER_HOST=X-master
+export SPARK_LOCAL_IP=$(hostname)
+export SPARK_PUBLIC_DNS=$(hostname)
+export SPARK_DAEMON_MEMORY=512m
+export SPARK_WORKER_CORES=1
+export SPARK_WORKER_MEMORY=1g
+export SPARK_LOCAL_DIRS=/data/disk0/spark-tmp,/data/disk1/spark-tmp,/data/disk2/spark-tmp
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
