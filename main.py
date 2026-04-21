@@ -148,48 +148,149 @@ def create_spark_session(app_name, master):
         .appName(app_name)
         .master(master)
         .config("spark.sql.shuffle.partitions", "200")
-        .config("spark.driver.memory", "2g")
-        .config("spark.executor.memory", "2g")
+        .config("spark.driver.memory", "1g")
+        .config("spark.executor.memory", "1g")
         .getOrCreate()
     )
     return spark
 
 
+#def load_stock_data(data_dir: str, num_partitions: int):
+#    """Load all stock CSV files from data_dir into a single Spark DataFrame."""
+#    spark = SparkSession.getActiveSession()
+#    
+#    data_path = Path(data_dir)
+#    txt_files = sorted(data_path.glob("*.txt"))
+#    
+#    if not txt_files:
+#        raise ValueError(f"No .txt files found in {data_dir}")
+#    
+#    print(f"Found {len(txt_files)} stock files. Loading...")
+#    
+#    # Read first file to infer schema
+#    first_file = str(txt_files[0])
+#    df = spark.read.option("header", "true").option("inferSchema", "true").csv(first_file)
+#    
+#    # Add Symbol column
+#    df = df.withColumn("Symbol", F.lit(txt_files[0].name.replace(".us.txt", "")))
+#    
+#    # Read and process remaining files
+#    for file_path in txt_files[1:]:
+#        temp_df = spark.read.option("header", "true").option("inferSchema", "true").csv(str(file_path))
+#        temp_df = temp_df.withColumn("Symbol", F.lit(file_path.name.replace(".us.txt", "")))
+#        df = df.union(temp_df)
+#    
+#    # Repartition for parallel processing
+#    df = df.repartition(num_partitions)
+#    
+#    # Convert Date to timestamp and numeric columns
+#    df = df.withColumn("Date", F.to_timestamp("Date"))
+#    numeric_cols = ["Open", "High", "Low", "Close", "Volume", "OpenInt"]
+#    for col in numeric_cols:
+#        df = df.withColumn(col, F.col(col).cast(T.DoubleType()))
+#    
+#    print(f"Loaded data with {df.count()} rows")
+#    return df
+
+# def load_stock_data(data_dir: str, num_partitions: int):
+#     """Carga archivos CSV saltando aquellos que no tengan el número correcto de columnas."""
+#     spark = SparkSession.getActiveSession()
+#     data_path = Path(data_dir)
+#     txt_files = sorted(data_path.glob("*.txt"))
+#     
+#     if not txt_files:
+#         raise ValueError(f"No se encontraron archivos .txt en {data_dir}")
+#     
+#     print(f"Buscando en {len(txt_files)} archivos... Validando esquemas.")
+#     
+#     # 1. Definimos las columnas que esperamos basándonos en el estándar (7 columnas originales)
+#     # Date, Open, High, Low, Close, Volume, OpenInt
+#     EXPECTED_CSV_COL_COUNT = 7 
+# 
+#     df = None
+#     files_loaded = 0
+#     files_skipped = 0
+# 
+#     for file_path in txt_files:
+#         # Leemos el archivo temporalmente
+#         temp_df = spark.read.option("header", "true").option("inferSchema", "true").csv(str(file_path))
+#         
+#         # 2. Verificamos si el archivo tiene las columnas correctas
+#         if len(temp_df.columns) == EXPECTED_CSV_COL_COUNT:
+#             print(file_path, end=", ")
+#             temp_df = temp_df.withColumn("Symbol", F.lit(file_path.name.replace(".us.txt", "")))
+#             
+#             if df is None:
+#                 df = temp_df
+#             else:
+#                 df = df.union(temp_df)
+#             files_loaded += 1
+#         else:
+#             print(file_path, " VACIO", end=", ")
+#             # Si no coincide, lo ignoramos y avisamos
+#             files_skipped += 1
+#             # Opcional: imprimir el nombre del archivo problemático
+#             # print(f"Skipping {file_path.name}: found {len(temp_df.columns)} columns.")
+# 
+#     if df is None:
+#         raise ValueError("No se pudo cargar ningún archivo válido.")
+# 
+#     print(f"Carga finalizada: {files_loaded} archivos cargados, {files_skipped} archivos saltados.")
+#     
+#     # Reparticionar y procesar tipos
+#     df = df.repartition(num_partitions)
+#     df = df.withColumn("Date", F.to_timestamp("Date"))
+#     numeric_cols = ["Open", "High", "Low", "Close", "Volume", "OpenInt"]
+#     for col in numeric_cols:
+#         df = df.withColumn(col, F.col(col).cast(T.DoubleType()))
+#     
+#     print(f"Dataset total creado con {df.count()} filas.")
+#     return df
+
 def load_stock_data(data_dir: str, num_partitions: int):
-    """Load all stock CSV files from data_dir into a single Spark DataFrame."""
+    """Carga eficiente de archivos CSV usando lectura masiva y funciones nativas."""
     spark = SparkSession.getActiveSession()
     
-    data_path = Path(data_dir)
-    txt_files = sorted(data_path.glob("*.txt"))
-    
-    if not txt_files:
-        raise ValueError(f"No .txt files found in {data_dir}")
-    
-    print(f"Found {len(txt_files)} stock files. Loading...")
-    
-    # Read first file to infer schema
-    first_file = str(txt_files[0])
-    df = spark.read.option("header", "true").option("inferSchema", "true").csv(first_file)
-    
-    # Add Symbol column
-    df = df.withColumn("Symbol", F.lit(txt_files[0].name.replace(".us.txt", "")))
-    
-    # Read and process remaining files
-    for file_path in txt_files[1:]:
-        temp_df = spark.read.option("header", "true").option("inferSchema", "true").csv(str(file_path))
-        temp_df = temp_df.withColumn("Symbol", F.lit(file_path.name.replace(".us.txt", "")))
-        df = df.union(temp_df)
-    
-    # Repartition for parallel processing
+    # Definir el esquema explícitamente evita que Spark tenga que leer los archivos dos veces
+    # Ajusta los nombres/tipos si varían, pero esto es lo estándar para el dataset de Kaggle
+    schema = T.StructType([
+        T.StructField("Date", T.StringType(), True),
+        T.StructField("Open", T.DoubleType(), True),
+        T.StructField("High", T.DoubleType(), True),
+        T.StructField("Low", T.DoubleType(), True),
+        T.StructField("Close", T.DoubleType(), True),
+        T.StructField("Volume", T.DoubleType(), True),
+        T.StructField("OpenInt", T.DoubleType(), True)
+    ])
+
+    print(f"Cargando datos masivamente desde {data_dir}...")
+
+    # 1. Leer todos los archivos .txt del directorio de una sola vez
+    # Usamos recursiveFileLookup si hay subcarpetas
+    df = (spark.read
+          .option("header", "true")
+          .schema(schema)
+          .csv(f"{data_dir}/*.txt"))
+
+    # 2. Extraer el 'Symbol' del nombre del archivo de forma distribuida
+    # F.input_file_name() devuelve la ruta completa, extraemos el nombre del archivo
+    df = df.withColumn("FilePath", F.input_file_name())
+    # Regex para extraer el nombre del archivo sin la ruta ni la extensión .us.txt
+    df = df.withColumn("Symbol", F.regexp_extract("FilePath", r"([^/]+)\.us\.txt$", 1))
+    df = df.drop("FilePath")
+
+    # 3. Limpieza: Filtrar filas donde todas las columnas numéricas sean nulas 
+    # (Equivalente a tu validación de archivos vacíos o corruptos)
+    df = df.dropna(subset=["Open", "High", "Low", "Close"])
+
+    # Reparticionar y procesar tipos finales
     df = df.repartition(num_partitions)
-    
-    # Convert Date to timestamp and numeric columns
     df = df.withColumn("Date", F.to_timestamp("Date"))
-    numeric_cols = ["Open", "High", "Low", "Close", "Volume", "OpenInt"]
-    for col in numeric_cols:
-        df = df.withColumn(col, F.col(col).cast(T.DoubleType()))
     
-    print(f"Loaded data with {df.count()} rows")
+    # Forzar una acción para disparar la carga (opcional para debug)
+    # total_rows = df.count()
+    # print(f"Dataset total cargado con {total_rows} filas.")
+    
     return df
 
 
@@ -212,7 +313,7 @@ def add_cyclic_features(df):
 def add_target_variable(df):
     """Add LogReturn20 target: log-return of closing price 20 days in the future."""
     
-    window_spec = F.Window.partitionBy("Symbol").orderBy("Date")
+    window_spec = F.window.partitionBy("Symbol").orderBy("Date")
     
     # Create lead to get closing price 20 days ahead and calculate log-return
     df = df.withColumn(
@@ -471,10 +572,11 @@ def main():
     
     try:
         # Create Spark session
+        print("STEP 0: Creating spark session")
         spark = create_spark_session(args.app_name, detected_master)
 
         # Load data
-        print("STEP 1: Loading stock data...")
+        print("\nSTEP 1: Loading stock data...")
         stock_data = load_stock_data("data/Stocks", args.num_partitions)
         
         # Add cyclic features

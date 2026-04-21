@@ -3,3 +3,7 @@ start-all.sh
 hdfs dfs -mkdir -p /user/vagrant/data/Stocks
 hdfs dfs -put /home/vagrant/iage_prac_5/data/Stocks/*.txt /user/vagrant/data/Stocks/
 hdfs dfs -ls -R /user/vagrant/data/Stocks
+
+IP:
+192.168.56.10:9870
+192.168.56.10:8080
