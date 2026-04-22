@@ -1,6 +1,6 @@
-# Arrancar la máquina virtual tras seguir los pasos de la práctica 4.
+# 1. Arrancar la máquina virtual tras seguir los pasos de la práctica 4.
 
-# Ejecutar los comandos
+# 2. Ejecutar los comandos
 # para saber cómo hacer el scp
 vagrant ssh-config > ssh-config
 

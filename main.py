@@ -155,99 +155,6 @@ def create_spark_session(app_name, master):
     )
     return spark
 
-
-#def load_stock_data(data_dir: str, num_partitions: int):
-#    """Load all stock CSV files from data_dir into a single Spark DataFrame."""
-#    spark = SparkSession.getActiveSession()
-#    
-#    data_path = Path(data_dir)
-#    txt_files = sorted(data_path.glob("*.txt"))
-#    
-#    if not txt_files:
-#        raise ValueError(f"No .txt files found in {data_dir}")
-#    
-#    print(f"Found {len(txt_files)} stock files. Loading...")
-#    
-#    # Read first file to infer schema
-#    first_file = str(txt_files[0])
-#    df = spark.read.option("header", "true").option("inferSchema", "true").csv(first_file)
-#    
-#    # Add Symbol column
-#    df = df.withColumn("Symbol", F.lit(txt_files[0].name.replace(".us.txt", "")))
-#    
-#    # Read and process remaining files
-#    for file_path in txt_files[1:]:
-#        temp_df = spark.read.option("header", "true").option("inferSchema", "true").csv(str(file_path))
-#        temp_df = temp_df.withColumn("Symbol", F.lit(file_path.name.replace(".us.txt", "")))
-#        df = df.union(temp_df)
-#    
-#    # Repartition for parallel processing
-#    df = df.repartition(num_partitions)
-#    
-#    # Convert Date to timestamp and numeric columns
-#    df = df.withColumn("Date", F.to_timestamp("Date"))
-#    numeric_cols = ["Open", "High", "Low", "Close", "Volume", "OpenInt"]
-#    for col in numeric_cols:
-#        df = df.withColumn(col, F.col(col).cast(T.DoubleType()))
-#    
-#    print(f"Loaded data with {df.count()} rows")
-#    return df
-
-# def load_stock_data(data_dir: str, num_partitions: int):
-#     """Carga archivos CSV saltando aquellos que no tengan el número correcto de columnas."""
-#     spark = SparkSession.getActiveSession()
-#     data_path = Path(data_dir)
-#     txt_files = sorted(data_path.glob("*.txt"))
-#     
-#     if not txt_files:
-#         raise ValueError(f"No se encontraron archivos .txt en {data_dir}")
-#     
-#     print(f"Buscando en {len(txt_files)} archivos... Validando esquemas.")
-#     
-#     # 1. Definimos las columnas que esperamos basándonos en el estándar (7 columnas originales)
-#     # Date, Open, High, Low, Close, Volume, OpenInt
-#     EXPECTED_CSV_COL_COUNT = 7 
-# 
-#     df = None
-#     files_loaded = 0
-#     files_skipped = 0
-# 
-#     for file_path in txt_files:
-#         # Leemos el archivo temporalmente
-#         temp_df = spark.read.option("header", "true").option("inferSchema", "true").csv(str(file_path))
-#         
-#         # 2. Verificamos si el archivo tiene las columnas correctas
-#         if len(temp_df.columns) == EXPECTED_CSV_COL_COUNT:
-#             print(file_path, end=", ")
-#             temp_df = temp_df.withColumn("Symbol", F.lit(file_path.name.replace(".us.txt", "")))
-#             
-#             if df is None:
-#                 df = temp_df
-#             else:
-#                 df = df.union(temp_df)
-#             files_loaded += 1
-#         else:
-#             print(file_path, " VACIO", end=", ")
-#             # Si no coincide, lo ignoramos y avisamos
-#             files_skipped += 1
-#             # Opcional: imprimir el nombre del archivo problemático
-#             # print(f"Skipping {file_path.name}: found {len(temp_df.columns)} columns.")
-# 
-#     if df is None:
-#         raise ValueError("No se pudo cargar ningún archivo válido.")
-# 
-#     print(f"Carga finalizada: {files_loaded} archivos cargados, {files_skipped} archivos saltados.")
-#     
-#     # Reparticionar y procesar tipos
-#     df = df.repartition(num_partitions)
-#     df = df.withColumn("Date", F.to_timestamp("Date"))
-#     numeric_cols = ["Open", "High", "Low", "Close", "Volume", "OpenInt"]
-#     for col in numeric_cols:
-#         df = df.withColumn(col, F.col(col).cast(T.DoubleType()))
-#     
-#     print(f"Dataset total creado con {df.count()} filas.")
-#     return df
-
 def load_stock_data(data_dir: str, num_partitions: int):
     """Carga eficiente de archivos CSV usando lectura masiva y funciones nativas."""
     spark = SparkSession.getActiveSession()
@@ -444,38 +351,41 @@ def train_linear_regression_with_crossvalidation(train_df, test_df, feature_cols
         seed=42
     )
     
-    print("Starting CrossValidator (may take a few minutes)...\n")
+    print("Starting CrossValidator and full test evaluation...\n")
     cv_model = cv.fit(train_df)
     
-    # Extract best model
-    best_pipeline_model = cv_model.bestModel
-    best_params = cv_model.bestModel.stages[-1].extractParamMap()
+    # Identificar el índice del mejor según Validación Cruzada
+    best_index = np.argmin(cv_model.avgMetrics)
     
-    # Evaluate on test set
-    test_predictions = best_pipeline_model.transform(test_df)
-    
-    rmse = evaluator.evaluate(test_predictions, {evaluator.metricName: "rmse"})
-    mae_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="mae")
-    mae = mae_evaluator.evaluate(test_predictions)
-    r2_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="r2")
-    r2 = r2_evaluator.evaluate(test_predictions)
-    
-    # Collect CV scores for all parameter combinations
     results = []
-    for i, (params, avg_cv_score) in enumerate(zip(param_grid, cv_model.avgMetrics)):
+    # Iterar sobre TODO el grid para calcular el test en cada caso
+    for i, params in enumerate(param_grid):
+        # Entrenar el pipeline específicamente para esta combinación
+        current_model = pipeline.fit(train_df, params)
+        test_predictions = current_model.transform(test_df)
+        
+        # Cálculo de métricas para esta combinación específica
+        rmse = evaluator.evaluate(test_predictions, {evaluator.metricName: "rmse"})
+        mae_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="mae")
+        mae = mae_evaluator.evaluate(test_predictions)
+        r2_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="r2")
+        r2 = r2_evaluator.evaluate(test_predictions)
+        
+        is_current_best = (i == best_index)
+        
         result = {
             "model_name": "LinearRegression",
             "regParam": params[lr.regParam],
             "elasticNetParam": params[lr.elasticNetParam],
-            "cv_rmse_avg": avg_cv_score,
-            "test_rmse": rmse if params == best_params else None,
-            "test_mae": mae if params == best_params else None,
-            "test_r2": r2 if params == best_params else None,
-            "is_best": (params == best_params)
+            "cv_rmse_avg": cv_model.avgMetrics[i],
+            "test_rmse": rmse,
+            "test_mae": mae,
+            "test_r2": r2,
+            "is_best": is_current_best
         }
         results.append(result)
     
-    return results, best_pipeline_model, cv_model
+    return results, cv_model.bestModel, cv_model
 
 
 def train_glr_with_crossvalidation(train_df, test_df, feature_cols, parallelism=4):
@@ -525,8 +435,8 @@ def train_glr_with_crossvalidation(train_df, test_df, feature_cols, parallelism=
     
     # Define parameter grid
     param_grid = (ParamGridBuilder()
-                  .addGrid(glr.regParam, [0.01, 0.1])
-                  .addGrid(glr.maxIter, [50, 100])
+                  .addGrid(glr.regParam, [0.005, 0.01, 0.02, 0.03, 0.1])
+                  .addGrid(glr.maxIter, [50, 100, 150])
                   .build())
     
     print(f"Parameter grid size: {len(param_grid)} combinations")
@@ -548,38 +458,40 @@ def train_glr_with_crossvalidation(train_df, test_df, feature_cols, parallelism=
         seed=42
     )
     
-    print("Starting CrossValidator (may take a few minutes)...\n")
+    print("Starting CrossValidator and full test evaluation...\n")
     cv_model = cv.fit(train_df)
     
-    # Extract best model
-    best_pipeline_model = cv_model.bestModel
-    best_params = cv_model.bestModel.stages[-1].extractParamMap()
+    # Identificar el índice del mejor
+    best_index = np.argmin(cv_model.avgMetrics)
     
-    # Evaluate on test set
-    test_predictions = best_pipeline_model.transform(test_df)
-    
-    rmse = evaluator.evaluate(test_predictions, {evaluator.metricName: "rmse"})
-    mae_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="mae")
-    mae = mae_evaluator.evaluate(test_predictions)
-    r2_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="r2")
-    r2 = r2_evaluator.evaluate(test_predictions)
-    
-    # Collect CV scores for all parameter combinations
     results = []
-    for i, (params, avg_cv_score) in enumerate(zip(param_grid, cv_model.avgMetrics)):
+    for i, params in enumerate(param_grid):
+        # Ajustar el pipeline con los parámetros actuales del grid
+        current_model = pipeline.fit(train_df, params)
+        test_predictions = current_model.transform(test_df)
+        
+        # Evaluar
+        rmse = evaluator.evaluate(test_predictions, {evaluator.metricName: "rmse"})
+        mae_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="mae")
+        mae = mae_evaluator.evaluate(test_predictions)
+        r2_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="r2")
+        r2 = r2_evaluator.evaluate(test_predictions)
+        
+        is_current_best = (i == best_index)
+        
         result = {
             "model_name": "GeneralizedLinearRegression",
             "regParam": params[glr.regParam],
             "maxIter": params[glr.maxIter],
-            "cv_rmse_avg": avg_cv_score,
-            "test_rmse": rmse if params == best_params else None,
-            "test_mae": mae if params == best_params else None,
-            "test_r2": r2 if params == best_params else None,
-            "is_best": (params == best_params)
+            "cv_rmse_avg": cv_model.avgMetrics[i],
+            "test_rmse": rmse,
+            "test_mae": mae,
+            "test_r2": r2,
+            "is_best": is_current_best
         }
         results.append(result)
     
-    return results, best_pipeline_model, cv_model
+    return results, cv_model.bestModel, cv_model
 
 
 def save_results_to_csv(all_results, output_dir):
