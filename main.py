@@ -13,10 +13,11 @@ import re
 import socket
 
 import pandas as pd
-from pyspark.sql import SparkSession, functions as F, types as T
+from pyspark.sql import SparkSession, Window, functions as F, types as T
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.regression import LinearRegression, GeneralizedLinearRegression
+from pyspark.ml.tuning import ParamGridBuilder, CrossValidator, TrainValidationSplit
 from pyspark.ml.evaluation import RegressionEvaluator
 import numpy as np
 
@@ -313,7 +314,7 @@ def add_cyclic_features(df):
 def add_target_variable(df):
     """Add LogReturn20 target: log-return of closing price 20 days in the future."""
     
-    window_spec = F.window.partitionBy("Symbol").orderBy("Date")
+    window_spec = Window.partitionBy("Symbol").orderBy("Date")
     
     # Create lead to get closing price 20 days ahead and calculate log-return
     df = df.withColumn(
@@ -327,7 +328,7 @@ def add_target_variable(df):
 def add_past_returns(df):
     """Add past return features at 3, 5, and 10 days normalized by current close."""
     
-    window_spec = F.Window.partitionBy("Symbol").orderBy("Date")
+    window_spec = Window.partitionBy("Symbol").orderBy("Date")
     
     # Calculate log-returns relative to current close price at lags 3, 5, 10 days
     df = df.withColumn(
@@ -347,7 +348,7 @@ def add_past_returns(df):
 
 
 def prepare_features_and_target(df):
-    """Select and prepare features and target for modeling."""
+    """Select and clean data for modeling (remove nulls)."""
     
     feature_cols = [
         "DateMonthSin", "DateMonthCos", "DateDaySin", "DateDayCos",
@@ -360,154 +361,225 @@ def prepare_features_and_target(df):
     # Remove rows with any null features
     df = df.dropna(subset=feature_cols)
     
-    # Create feature vector
+    # Select final columns (target renamed to label for MLlib)
+    df = df.select(feature_cols + ["LogReturn20"])
+    df = df.withColumnRenamed("LogReturn20", "label")
+    
+    return df, feature_cols
+
+
+def create_train_test_split(df, test_ratio=0.2, seed=42):
+    """Create train/test split using native Spark randomSplit (distributed approach)."""
+    train_ratio = 1.0 - test_ratio
+    train_df, test_df = df.randomSplit([train_ratio, test_ratio], seed=seed)
+    
+    return train_df, test_df
+
+
+def train_linear_regression_with_crossvalidation(train_df, test_df, feature_cols, parallelism=4):
+    """
+    Train Linear Regression with grid search using CrossValidator for parallel hyperparameter tuning.
+    
+    Args:
+        train_df: Training data with feature columns and 'label' target
+        test_df: Test data for final evaluation
+        feature_cols: List of feature column names
+        parallelism: Number of parallel hyperparameter configurations to train
+    
+    Returns:
+        List of results dictionaries with metrics and hyperparameters
+    """
+    
+    print(f"\n{'='*80}")
+    print("LinearRegression Grid Search with CrossValidator (parallelism={})".format(parallelism))
+    print(f"{'='*80}")
+    
+    # Stage 1: VectorAssembler (combines feature columns into 'features' vector)
     assembler = VectorAssembler(
         inputCols=feature_cols,
         outputCol="features"
     )
-    df = assembler.transform(df)
     
-    # Standardize features
+    # Stage 2: StandardScaler (scales features - will be re-fit on each fold)
     scaler = StandardScaler(
         inputCol="features",
         outputCol="scaledFeatures",
         withMean=True,
         withStd=True
     )
-    scaler_model = scaler.fit(df)
-    df = scaler_model.transform(df)
     
-    # Select final columns
-    df = df.select("scaledFeatures", "LogReturn20")
-    df = df.withColumnRenamed("scaledFeatures", "features")
-    df = df.withColumnRenamed("LogReturn20", "label")
+    # Stage 3: Model
+    lr = LinearRegression(
+        featuresCol="scaledFeatures",
+        labelCol="label",
+        maxIter=100,
+        # standardization=False  # Already scaled by StandardScaler
+    )
     
-    return df
-
-
-def create_train_test_split(df, test_ratio=0.2, seed=None):
-    """Create train/test split with proper stratification by sorted order."""
+    # Build pipeline: Assembler -> Scaler -> Model
+    pipeline = Pipeline(stages=[assembler, scaler, lr])
     
-    # Add row number for stratified split
-    window_spec = F.Window.orderBy(F.rand(seed=seed))
-    df_with_rn = df.withColumn("_rn", F.row_number().over(window_spec))
-    total_count = df_with_rn.count()
-    test_threshold = int(total_count * test_ratio)
+    # Define parameter grid for grid search
+    param_grid = (ParamGridBuilder()
+                  .addGrid(lr.regParam, [0.01, 0.1])
+                  .addGrid(lr.elasticNetParam, [0.5, 1.0])
+                  .build())
     
-    train_df = df_with_rn.filter(F.col("_rn") > test_threshold).drop("_rn")
-    test_df = df_with_rn.filter(F.col("_rn") <= test_threshold).drop("_rn")
+    print(f"Parameter grid size: {len(param_grid)} combinations")
     
-    return train_df, test_df
-
-
-def evaluate_model(model, test_df, model_name):
-    """Evaluate model on test set and return metrics."""
+    # Define evaluation metric
+    evaluator = RegressionEvaluator(
+        labelCol="label",
+        predictionCol="prediction",
+        metricName="rmse"
+    )
     
-    predictions = model.transform(test_df)
+    # CrossValidator: automatic k-fold cross-validation with parallel hyperparameter tuning
+    cv = CrossValidator(
+        estimator=pipeline,
+        estimatorParamMaps=param_grid,
+        evaluator=evaluator,
+        numFolds=3,  # 3-fold cross-validation
+        parallelism=parallelism,  # Train up to N hyperparameter configs simultaneously
+        seed=42
+    )
     
-    # Calculate metrics
-    evaluator_rmse = RegressionEvaluator(metricName="rmse")
-    evaluator_mae = RegressionEvaluator(metricName="mae")
-    evaluator_r2 = RegressionEvaluator(metricName="r2")
+    print("Starting CrossValidator (may take a few minutes)...\n")
+    cv_model = cv.fit(train_df)
     
-    rmse = evaluator_rmse.evaluate(predictions)
-    mae = evaluator_mae.evaluate(predictions)
-    r2 = evaluator_r2.evaluate(predictions)
+    # Extract best model
+    best_pipeline_model = cv_model.bestModel
+    best_params = cv_model.bestModel.stages[-1].extractParamMap()
     
-    metrics = {
-        "model_name": model_name,
-        "rmse": rmse,
-        "mae": mae,
-        "r2": r2,
-    }
+    # Evaluate on test set
+    test_predictions = best_pipeline_model.transform(test_df)
     
-    return metrics
-
-
-def train_linear_regression_grid_search(train_df, test_df, seeds=[42, 123, 456]):
-    """Grid search over Linear Regression hyperparameters."""
+    rmse = evaluator.evaluate(test_predictions, {evaluator.metricName: "rmse"})
+    mae_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="mae")
+    mae = mae_evaluator.evaluate(test_predictions)
+    r2_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="r2")
+    r2 = r2_evaluator.evaluate(test_predictions)
     
+    # Collect CV scores for all parameter combinations
     results = []
+    for i, (params, avg_cv_score) in enumerate(zip(param_grid, cv_model.avgMetrics)):
+        result = {
+            "model_name": "LinearRegression",
+            "regParam": params[lr.regParam],
+            "elasticNetParam": params[lr.elasticNetParam],
+            "cv_rmse_avg": avg_cv_score,
+            "test_rmse": rmse if params == best_params else None,
+            "test_mae": mae if params == best_params else None,
+            "test_r2": r2 if params == best_params else None,
+            "is_best": (params == best_params)
+        }
+        results.append(result)
     
-    # Hyperparameter grid for Linear Regression
-    reg_params = [0.0, 0.01, 0.1]
-    elastic_net_params = [0.0, 0.5, 1.0]  # 0=Ridge, 1=Lasso
-    
-    param_count = 0
-    total_params = len(reg_params) * len(elastic_net_params) * len(seeds)
-    
-    for seed in seeds:
-        for reg_param in reg_params:
-            for elastic_net_param in elastic_net_params:
-                param_count += 1
-                print(f"\n[LinearRegression] Training {param_count}/{total_params}: "
-                      f"regParam={reg_param}, elasticNetParam={elastic_net_param}, seed={seed}")
-                
-                lr = LinearRegression(
-                    maxIter=100,
-                    regParam=reg_param,
-                    elasticNetParam=elastic_net_param,
-                    standardization=True,
-                    seed=seed
-                )
-                
-                model = lr.fit(train_df)
-                metrics = evaluate_model(model, test_df, "LinearRegression")
-                
-                metrics.update({
-                    "seed": seed,
-                    "regParam": reg_param,
-                    "elasticNetParam": elastic_net_param,
-                })
-                
-                results.append(metrics)
-                print(f"  RMSE: {metrics['rmse']:.4f}, MAE: {metrics['mae']:.4f}, R²: {metrics['r2']:.4f}")
-    
-    return results
+    return results, best_pipeline_model, cv_model
 
 
-def train_glr_grid_search(train_df, test_df, seeds=[42, 123, 456]):
-    """Grid search over Generalized Linear Regression (alternative to MLPRegressor)."""
+def train_glr_with_crossvalidation(train_df, test_df, feature_cols, parallelism=4):
+    """
+    Train Generalized Linear Regression with grid search using CrossValidator for parallel hyperparameter tuning.
     
+    Args:
+        train_df: Training data with feature columns and 'label' target
+        test_df: Test data for final evaluation
+        feature_cols: List of feature column names
+        parallelism: Number of parallel hyperparameter configurations to train
+    
+    Returns:
+        List of results dictionaries with metrics and hyperparameters
+    """
+    
+    print(f"\n{'='*80}")
+    print("GeneralizedLinearRegression Grid Search with CrossValidator (parallelism={})".format(parallelism))
+    print(f"{'='*80}")
+    
+    # Stage 1: VectorAssembler
+    assembler = VectorAssembler(
+        inputCols=feature_cols,
+        outputCol="features"
+    )
+    
+    # Stage 2: StandardScaler
+    scaler = StandardScaler(
+        inputCol="features",
+        outputCol="scaledFeatures",
+        withMean=True,
+        withStd=True
+    )
+    
+    # Stage 3: Model
+    glr = GeneralizedLinearRegression(
+        featuresCol="scaledFeatures",
+        labelCol="label",
+        family="gaussian",
+        link="identity",
+        # solver="normal",
+        # standardization=False  # Already scaled by StandardScaler
+    )
+    
+    # Build pipeline
+    pipeline = Pipeline(stages=[assembler, scaler, glr])
+    
+    # Define parameter grid
+    param_grid = (ParamGridBuilder()
+                  .addGrid(glr.regParam, [0.01, 0.1])
+                  .addGrid(glr.maxIter, [50, 100])
+                  .build())
+    
+    print(f"Parameter grid size: {len(param_grid)} combinations")
+    
+    # Define evaluation metric
+    evaluator = RegressionEvaluator(
+        labelCol="label",
+        predictionCol="prediction",
+        metricName="rmse"
+    )
+    
+    # CrossValidator
+    cv = CrossValidator(
+        estimator=pipeline,
+        estimatorParamMaps=param_grid,
+        evaluator=evaluator,
+        numFolds=3,
+        parallelism=parallelism,
+        seed=42
+    )
+    
+    print("Starting CrossValidator (may take a few minutes)...\n")
+    cv_model = cv.fit(train_df)
+    
+    # Extract best model
+    best_pipeline_model = cv_model.bestModel
+    best_params = cv_model.bestModel.stages[-1].extractParamMap()
+    
+    # Evaluate on test set
+    test_predictions = best_pipeline_model.transform(test_df)
+    
+    rmse = evaluator.evaluate(test_predictions, {evaluator.metricName: "rmse"})
+    mae_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="mae")
+    mae = mae_evaluator.evaluate(test_predictions)
+    r2_evaluator = RegressionEvaluator(labelCol="label", predictionCol="prediction", metricName="r2")
+    r2 = r2_evaluator.evaluate(test_predictions)
+    
+    # Collect CV scores for all parameter combinations
     results = []
+    for i, (params, avg_cv_score) in enumerate(zip(param_grid, cv_model.avgMetrics)):
+        result = {
+            "model_name": "GeneralizedLinearRegression",
+            "regParam": params[glr.regParam],
+            "maxIter": params[glr.maxIter],
+            "cv_rmse_avg": avg_cv_score,
+            "test_rmse": rmse if params == best_params else None,
+            "test_mae": mae if params == best_params else None,
+            "test_r2": r2 if params == best_params else None,
+            "is_best": (params == best_params)
+        }
+        results.append(result)
     
-    # Hyperparameter grid for GLR
-    reg_params = [0.0, 0.01, 0.1]
-    max_iters = [50, 100]
-    
-    param_count = 0
-    total_params = len(reg_params) * len(max_iters) * len(seeds)
-    
-    for seed in seeds:
-        for reg_param in reg_params:
-            for max_iter in max_iters:
-                param_count += 1
-                print(f"\n[GeneralizedLinearRegression] Training {param_count}/{total_params}: "
-                      f"regParam={reg_param}, maxIter={max_iter}, seed={seed}")
-                
-                glr = GeneralizedLinearRegression(
-                    maxIter=max_iter,
-                    regParam=reg_param,
-                    family="gaussian",
-                    link="identity",
-                    solver="normal",
-                    standardization=True,
-                    seed=seed
-                )
-                
-                model = glr.fit(train_df)
-                metrics = evaluate_model(model, test_df, "GeneralizedLinearRegression")
-                
-                metrics.update({
-                    "seed": seed,
-                    "regParam": reg_param,
-                    "maxIter": max_iter,
-                })
-                
-                results.append(metrics)
-                print(f"  RMSE: {metrics['rmse']:.4f}, MAE: {metrics['mae']:.4f}, R²: {metrics['r2']:.4f}")
-    
-    return results
+    return results, best_pipeline_model, cv_model
 
 
 def save_results_to_csv(all_results, output_dir):
@@ -518,8 +590,12 @@ def save_results_to_csv(all_results, output_dir):
     # Create Pandas DataFrame
     results_df = pd.DataFrame(all_results)
     
-    # Sort by RMSE ascending (best results first)
-    results_df = results_df.sort_values("rmse").reset_index(drop=True)
+    # Sort by test_rmse (best results first), using CV RMSE as tiebreaker
+    results_df = results_df.sort_values(
+        by="test_rmse", 
+        na_position='last',
+        ascending=True
+    ).reset_index(drop=True)
     
     # Save to CSV
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -530,27 +606,44 @@ def save_results_to_csv(all_results, output_dir):
     
     # Print summary
     print("\n" + "="*80)
-    print("RESULTS SUMMARY")
+    print("RESULTS SUMMARY (All Parameter Combinations with CV Metrics)")
     print("="*80)
     print(results_df.to_string())
     
     print("\n" + "="*80)
-    print("BEST MODELS (by RMSE):")
+    print("BEST MODELS (by Test RMSE):")
     print("="*80)
-    best_lr = results_df[results_df["model_name"] == "LinearRegression"].iloc[0]
-    best_glr = results_df[results_df["model_name"] == "GeneralizedLinearRegression"].iloc[0]
     
-    print(f"\n✓ Best Linear Regression:")
-    print(f"  RMSE: {best_lr['rmse']:.4f}")
-    print(f"  Parameters: regParam={best_lr['regParam']}, elasticNetParam={best_lr['elasticNetParam']}, seed={best_lr['seed']}")
+    best_lr = results_df[
+        (results_df["model_name"] == "LinearRegression") & 
+        (results_df["is_best"] == True)
+    ]
+    best_glr = results_df[
+        (results_df["model_name"] == "GeneralizedLinearRegression") & 
+        (results_df["is_best"] == True)
+    ]
     
-    print(f"\n✓ Best Generalized Linear Regression:")
-    print(f"  RMSE: {best_glr['rmse']:.4f}")
-    print(f"  Parameters: regParam={best_glr['regParam']}, maxIter={best_glr['maxIter']}, seed={best_glr['seed']}")
+    if not best_lr.empty:
+        row = best_lr.iloc[0]
+        print(f"\n✓ Best Linear Regression:")
+        print(f"  Test RMSE: {row['test_rmse']:.4f}")
+        print(f"  Test MAE: {row['test_mae']:.4f}")
+        print(f"  Test R²: {row['test_r2']:.4f}")
+        print(f"  CV RMSE Average: {row['cv_rmse_avg']:.4f}")
+        print(f"  Parameters: regParam={row['regParam']}, elasticNetParam={row['elasticNetParam']}")
+    
+    if not best_glr.empty:
+        row = best_glr.iloc[0]
+        print(f"\n✓ Best Generalized Linear Regression:")
+        print(f"  Test RMSE: {row['test_rmse']:.4f}")
+        print(f"  Test MAE: {row['test_mae']:.4f}")
+        print(f"  Test R²: {row['test_r2']:.4f}")
+        print(f"  CV RMSE Average: {row['cv_rmse_avg']:.4f}")
+        print(f"  Parameters: regParam={row['regParam']}, maxIter={row['maxIter']}")
 
 
 def main():
-    """Main execution function."""
+    """Main execution function with optimized parallel grid search."""
     
     args = get_arguments()
     spark = None
@@ -562,7 +655,8 @@ def main():
         return
     
     print("="*80)
-    print("PySpark MLlib - Stock Price Regression with Grid Search")
+    print("PySpark MLlib - Stock Price Regression with CrossValidator")
+    print("Optimized for parallel hyperparameter tuning")
     print("="*80)
     print(f"\nConfiguration:")
     print(f"  - Master (auto-detected): {detected_master}")
@@ -571,45 +665,50 @@ def main():
     print(f"  - Output Directory: {args.output_dir}\n")
     
     try:
-        # Create Spark session
-        print("STEP 0: Creating spark session")
+        # STEP 0: Create Spark session
+        print("STEP 0: Creating Spark session")
         spark = create_spark_session(args.app_name, detected_master)
 
-        # Load data
+        # STEP 1: Load data
         print("\nSTEP 1: Loading stock data...")
         stock_data = load_stock_data("data/Stocks", args.num_partitions)
         
-        # Add cyclic features
-        print("\nSTEP 2: Adding cyclic date features...")
+        # STEP 2: Add cyclic features
+        print("STEP 2: Adding cyclic date features...")
         stock_data = add_cyclic_features(stock_data)
         
-        # Add target variable
+        # STEP 3: Add target variable
         print("STEP 3: Adding target variable (LogReturn20)...")
         stock_data = add_target_variable(stock_data)
         
-        # Add past return features
+        # STEP 4: Add past return features
         print("STEP 4: Adding past return features (3, 5, 10 days)...")
         stock_data = add_past_returns(stock_data)
         
-        # Prepare features
-        print("STEP 5: Preparing features and scaling...")
-        df_prepared = prepare_features_and_target(stock_data)
+        # STEP 5: Prepare features and clean data
+        print("STEP 5: Preparing features (cleaning nulls)...")
+        df_prepared, feature_cols = prepare_features_and_target(stock_data)
         
-        # Train/Test split
-        print("\nSTEP 6: Creating train/test split (80/20)...")
+        # STEP 6: Create train/test split using native randomSplit
+        print("\nSTEP 6: Creating train/test split (80/20) using randomSplit...")
         train_df, test_df = create_train_test_split(df_prepared, test_ratio=0.2, seed=42)
         train_df.cache()
         test_df.cache()
         print(f"  Train size: {train_df.count()}, Test size: {test_df.count()}")
         
-        # Grid searches
-        print("\nSTEP 7: Running grid search for Linear Regression...")
-        lr_results = train_linear_regression_grid_search(train_df, test_df, seeds=[42, 123, 456])
+        # STEP 7: Linear Regression with CrossValidator (parallelism=4)
+        print("\nSTEP 7: Running Linear Regression grid search with CrossValidator...")
+        lr_results, lr_best_model, lr_cv = train_linear_regression_with_crossvalidation(
+            train_df, test_df, feature_cols, parallelism=4
+        )
         
-        print("\nSTEP 8: Running grid search for Generalized Linear Regression...")
-        glr_results = train_glr_grid_search(train_df, test_df, seeds=[42, 123, 456])
+        # STEP 8: Generalized Linear Regression with CrossValidator (parallelism=4)
+        print("\nSTEP 8: Running Generalized Linear Regression grid search with CrossValidator...")
+        glr_results, glr_best_model, glr_cv = train_glr_with_crossvalidation(
+            train_df, test_df, feature_cols, parallelism=4
+        )
         
-        # Save results
+        # STEP 9: Save results
         print("\nSTEP 9: Saving results...")
         all_results = lr_results + glr_results
         save_results_to_csv(all_results, args.output_dir)
@@ -617,6 +716,12 @@ def main():
         print("\n" + "="*80)
         print("EXECUTION COMPLETED SUCCESSFULLY!")
         print("="*80)
+        print("\n✓ Optimizations applied:")
+        print("  • ParamGridBuilder for unified parameter declaration")
+        print("  • CrossValidator for parallel hyperparameter training")
+        print("  • Pipelines to prevent data leakage (StandardScaler re-fitted per fold)")
+        print("  • randomSplit() for distributed train/test split (no global Window operations)")
+        print("  • Integrated RegressionEvaluator for automated cross-fold validation")
         
     except Exception as e:
         print(f"\n❌ ERROR: {e}")

@@ -1,7 +1,22 @@
+# Arrancar la máquina virtual tras seguir los pasos de la práctica 4.
+
+# Ejecutar los comandos
+# para saber cómo hacer el scp
+vagrant ssh-config > ssh-config
+
+# Copiar la carpeta de la práctica
+# [!Warning] Importante modificar la ruta de la carpeta
+scp -rF ssh_config ../iage_prac_5 master:~
+
+# Iniciar el distributed file system
 start-dfs.sh
+# Iniciar los nodos
 start-all.sh
+# Crear la carpeta en el dfs
 hdfs dfs -mkdir -p /user/vagrant/data/Stocks
+# Copiar los datos a la carpeta
 hdfs dfs -put /home/vagrant/iage_prac_5/data/Stocks/*.txt /user/vagrant/data/Stocks/
+# Revisar si se quiere
 hdfs dfs -ls -R /user/vagrant/data/Stocks
 
 IP:
