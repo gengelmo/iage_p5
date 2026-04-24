@@ -1,0 +1,523 @@
+Archivos sin datos detectados: 32
+
+==================== EDA ====================
+Shape: (14887665, 8)
+Columnas: ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'OpenInt', 'Symbol']
+
+Head:
+        Date    Open    High     Low   Close    Volume  OpenInt Symbol
+0 1999-11-18  30.713  33.754  27.002  29.702  66277506        0      a
+1 1999-11-19  28.986  29.027  26.872  27.257  16142920        0      a
+2 1999-11-22  27.886  29.702  27.044  29.702   6970266        0      a
+3 1999-11-23  28.688  29.446  27.002  27.002   6332082        0      a
+4 1999-11-24  27.083  28.309  27.002  27.717   5132147        0      a
+
+Tail:
+               Date   Open     High      Low  Close  Volume  OpenInt Symbol
+14887660 2017-11-06  10.42  11.5400  10.4200  11.19  977948        0   zyne
+14887661 2017-11-07  11.30  11.4200  10.6700  10.83  451210        0   zyne
+14887662 2017-11-08  10.70  11.0600  10.3500  10.90  336449        0   zyne
+14887663 2017-11-09  11.00  11.8563  10.9700  11.60  463067        0   zyne
+14887664 2017-11-10  11.68  13.1500  11.3043  12.46  885587        0   zyne
+
+Información general:
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 14887665 entries, 0 to 14887664
+Data columns (total 8 columns):
+ #   Column   Dtype         
+---  ------   -----         
+ 0   Date     datetime64[ns]
+ 1   Open     float64       
+ 2   High     float64       
+ 3   Low      float64       
+ 4   Close    float64       
+ 5   Volume   int64         
+ 6   OpenInt  int64         
+ 7   Symbol   object        
+dtypes: datetime64[ns](1), float64(4), int64(2), object(1)
+memory usage: 908.7+ MB
+
+Nulos por columna:
+Date       0
+Open       0
+High       0
+Low        0
+Close      0
+Volume     0
+OpenInt    0
+Symbol     0
+
+Cadenas vacías por columna:
+Symbol    0
+
+Valores duplicados:
+0
+
+Duplicados por (Symbol, Date):
+0
+
+Rango temporal:
+  - Valor mínimo de la columna Date: 1962-01-02 00:00:00
+  - Valor máximo de la columna Date: 2017-11-10 00:00:00
+  - Fechas nulas tras parseo: 0
+
+Top 10 archivos que antes empiezan:
+  - ge.us.txt: 1962-01-02
+  - ibm.us.txt: 1962-01-02
+  - aa.us.txt: 1970-01-02
+  - aep.us.txt: 1970-01-02
+  - ba.us.txt: 1970-01-02
+  - c.us.txt: 1970-01-02
+  - cat.us.txt: 1970-01-02
+  - cnp.us.txt: 1970-01-02
+  - cvx.us.txt: 1970-01-02
+  - dis.us.txt: 1970-01-02
+
+Top 10 archivos que más tarde empiezan:
+  - ppdf.us.txt: 2017-11-10
+  - omfs.us.txt: 2017-11-10
+  - omfl.us.txt: 2017-11-10
+  - jhsc.us.txt: 2017-11-10
+  - flmx.us.txt: 2017-11-10
+  - eryp.us.txt: 2017-11-10
+  - ccv-cl.us.txt: 2017-11-10
+  - band.us.txt: 2017-11-10
+  - vtc.us.txt: 2017-11-09
+  - sogo.us.txt: 2017-11-09
+
+Conteo de archivos por mes-año de finalización:
+  - 2017-11: 7053
+  - 2017-10: 99
+  - 2017-09: 8
+  - 2017-08: 2
+  - 2017-06: 1
+
+Resumen estadístico:
+              count unique  top   freq                           mean                  min                  25%                  50%                  75%                  max             std
+Date       14887665    NaN  NaN    NaN  2010-06-19 22:22:30.382937344  1962-01-02 00:00:00  2007-11-29 00:00:00  2012-02-17 00:00:00  2015-05-21 00:00:00  2017-11-10 00:00:00             NaN
+Open     14887665.0    NaN  NaN    NaN                   30385.382296                  0.0                 7.75                15.68                 28.9         1423712891.0  4202500.953751
+High     14887665.0    NaN  NaN    NaN                    31212.46732                0.004                7.884               15.919               29.279        1442048636.45  4323485.549287
+Low      14887665.0    NaN  NaN    NaN                   29361.760762                 -1.0                 7.61               15.431                 28.5        1362117843.98  4046981.003572
+Close    14887665.0    NaN  NaN    NaN                   30245.218347               0.0037                 7.75                15.68              28.8999        1437986240.44  4180590.065664
+Volume   14887665.0    NaN  NaN    NaN                 1585730.317615                  0.0              32800.0             192266.0             891786.0         2423735131.0  7635186.712275
+OpenInt  14887665.0    NaN  NaN    NaN                            0.0                  0.0                  0.0                  0.0                  0.0                  0.0             0.0
+Symbol     14887665   7163  ibm  14059                            NaN                  NaN                  NaN                  NaN                  NaN                  NaN             NaN
+
+Valores inválidos en columnas de mercado:
+  - Open <= 0: 15 (0.0001%)
+  - High <= 0: 0 (0.0000%)
+  - Low <= 0: 28 (0.0002%)
+  - Close <= 0: 0 (0.0000%)
+  - Volume < 0: 0 (0.0000%)
+  - Volume == 0: 24638 (0.1655%)
+
+Inconsistencias OHLC:
+  - High < Open: 42 (0.0003%)
+  - High < Close: 43 (0.0003%)
+  - High < Low: 45 (0.0003%)
+  - Low > Open: 36 (0.0002%)
+  - Low > Close: 33 (0.0002%)
+
+Cuantiles de columnas numéricas:
+             Open        High         Low      Close        Volume
+0.010      0.6756      0.6997      0.6500      0.676  1.510000e+02
+0.050      1.9935      2.0449      1.9352      1.990  1.539000e+03
+0.500     15.6800     15.9190     15.4310     15.680  1.922660e+05
+0.950     78.4230     79.4000     77.4110     78.423  6.277114e+06
+0.990    285.4200    291.0500    279.6000    285.000  2.247997e+07
+0.999  23760.0000  24450.0000  23125.0000  23750.000  9.478069e+07
+
+Número de símbolos únicos:
+7163
+
+Filas por símbolo:
+count     7163.000000
+mean      2078.411978
+std       1833.247952
+min          1.000000
+25%        598.000000
+50%       1818.000000
+75%       3201.000000
+max      14059.000000
+
+Top 10 símbolos con más filas:
+Symbol
+ibm    14059
+ge     14058
+dte    12075
+mmm    12075
+nav    12075
+aep    12075
+ko     12075
+ip     12075
+pg     12075
+cat    12075
+
+Símbolos con pocas filas:
+  - Menos de 30 filas: 251
+  - Menos de 40 filas: 312
+  - Menos de 60 filas: 382
+
+Duración temporal por símbolo (en días):
+count     7163.000000
+mean      3085.913723
+std       2653.615095
+min          0.000000
+25%        897.000000
+50%       2636.000000
+75%       4641.000000
+max      20401.000000
+
+Número de filas por año:
+Date
+1962        503
+1963        502
+1964        506
+1965        504
+1966        504
+1967        502
+1968        452
+1969        500
+1970       7084
+1971       7084
+1972       7682
+1973       7796
+1974       7813
+1975       7836
+1976       7842
+1977      10836
+1978      10836
+1979      10877
+1980      13289
+1981      13606
+1982      21255
+1983      25251
+1984      29053
+1985      38127
+1986      42448
+1987      45730
+1988      52122
+1989      53336
+1990      60267
+1991      63478
+1992      67429
+1993      70605
+1994      72997
+1995      75341
+1996      79423
+1997      81271
+1998      83537
+1999      85437
+2000      87558
+2001      88116
+2002      89989
+2003      90508
+2004      91399
+2005     627852
+2006     752589
+2007     800621
+2008     832021
+2009     843611
+2010     889800
+2011     959149
+2012    1012606
+2013    1115629
+2014    1223115
+2015    1343108
+2016    1470356
+2017    1405977
+
+Símbolos activos por año:
+Date
+1962       2
+1963       2
+1964       2
+1965       2
+1966       2
+1967       2
+1968       2
+1969       2
+1970      28
+1971      28
+1972      31
+1973      31
+1974      31
+1975      31
+1976      31
+1977      43
+1978      43
+1979      43
+1980      54
+1981      73
+1982      85
+1983     107
+1984     139
+1985     162
+1986     176
+1987     199
+1988     208
+1989     215
+1990     246
+1991     257
+1992     271
+1993     289
+1994     295
+1995     310
+1996     319
+1997     326
+1998     337
+1999     346
+2000     355
+2001     360
+2002     360
+2003     362
+2004     365
+2005    3013
+2006    3170
+2007    3343
+2008    3412
+2009    3482
+2010    3801
+2011    4030
+2012    4318
+2013    4717
+2014    5196
+2015    5751
+2016    6399
+2017    7163
+
+==================== LABEL DISTRIBUTION BY SPLIT ====================
+
+--- TRAIN ---
+Tamaño: 10668088
+count    1.066809e+07
+mean     3.081136e-03
+std      1.311742e-01
+min     -5.298317e+00
+1%      -3.928242e-01
+5%      -1.903602e-01
+25%     -4.607709e-02
+50%      7.297171e-03
+75%      5.779904e-02
+95%      1.801755e-01
+99%      3.519536e-01
+max      8.045590e+00
+Media: 0.003081
+Desviación típica: 0.131174
+Asimetría: -0.257399
+Curtosis: 34.421458
+
+--- VALIDATION ---
+Tamaño: 1343108
+count    1.343108e+06
+mean    -1.882503e-02
+std      1.297691e-01
+min     -8.920728e+00
+1%      -4.336235e-01
+5%      -2.224000e-01
+25%     -6.077720e-02
+50%     -5.691535e-03
+75%      3.330199e-02
+95%      1.443503e-01
+99%      3.040185e-01
+max      2.509147e+00
+Media: -0.018825
+Desviación típica: 0.129769
+Asimetría: -1.283321
+Curtosis: 38.440679
+
+--- TEST ---
+Tamaño: 2731933
+count    2.731933e+06
+mean     8.017906e-03
+std      1.313575e-01
+min     -8.808092e+00
+1%      -3.846947e-01
+5%      -1.724420e-01
+25%     -3.027230e-02
+50%      9.238253e-03
+75%      5.173567e-02
+95%      1.804312e-01
+99%      3.692987e-01
+max      2.604387e+00
+Media: 0.008018
+Desviación típica: 0.131358
+Asimetría: -1.444018
+Curtosis: 46.726497
+
+Resumen comparativo de LogReturn20 por split:
+     split    count      mean      std       min       p01       p05    median      p95      p99      max
+     train 10668088  0.003081 0.131174 -5.298317 -0.392824 -0.190360  0.007297 0.180175 0.351954 8.045590
+validation  1343108 -0.018825 0.129769 -8.920728 -0.433623 -0.222400 -0.005692 0.144350 0.304018 2.509147
+      test  2731933  0.008018 0.131358 -8.808092 -0.384695 -0.172442  0.009238 0.180431 0.369299 2.604387
+
+==================== SYMBOL COVERAGE BY SPLIT ====================
+
+Símbolos únicos por split:
+  - Train: 5196
+  - Validation: 5751
+  - Test: 6781
+
+Solapamiento de símbolos:
+  - Validation ∩ Train: 5196
+  - Test ∩ Train: 5196
+  - Test ∩ Validation: 5751
+
+Símbolos no vistos en train:
+  - Nuevos en validation: 555
+  - Nuevos en test: 1585
+  - % símbolos de validation ya vistos en train: 90.35%
+  - % símbolos de test ya vistos en train: 76.63%
+
+Cobertura por filas:
+  - Filas de validation con símbolos ya vistos en train: 1284389 / 1343108 (95.63%)
+  - Filas de test con símbolos ya vistos en train: 2291843 / 2731933 (83.89%)
+
+Distribución de filas por símbolo dentro de cada split:
+
+Train:
+count     5196.000000
+mean      2053.134719
+std       1698.608452
+min          3.000000
+25%        831.500000
+50%       2402.000000
+75%       2479.000000
+max      13337.000000
+
+Validation:
+count    5751.000000
+mean      233.543384
+std        50.650909
+min         1.000000
+25%       252.000000
+50%       252.000000
+75%       252.000000
+max       252.000000
+
+Test:
+count    6781.000000
+mean      402.880549
+std       101.507363
+min        36.000000
+25%       434.000000
+50%       450.000000
+75%       450.000000
+max       450.000000
+
+Top 10 símbolos con más filas en validation:
+Symbol
+zumz    252
+a       252
+aa      252
+zts     252
+aaba    252
+aac     252
+aal     252
+aamc    252
+ztr     252
+aan     252
+
+Top 10 símbolos con más filas en test:
+Symbol
+zyne    450
+a       450
+aa      450
+aaap    450
+aaba    450
+aac     450
+aal     450
+zumz    450
+zts     450
+aan     450
+
+Cobertura de validation/test según historial previo en train:
+
+  Umbral: 60 filas previas en train
+    - Validation cubierto: 1253092 / 1343108 (93.30%)
+    - Test cubierto: 2235483 / 2731933 (81.83%)
+
+  Umbral: 252 filas previas en train
+    - Validation cubierto: 1163466 / 1343108 (86.62%)
+    - Test cubierto: 2074604 / 2731933 (75.94%)
+
+  Umbral: 756 filas previas en train
+    - Validation cubierto: 988609 / 1343108 (73.61%)
+    - Test cubierto: 1763718 / 2731933 (64.56%)
+
+==================== ELIGIBLE SYMBOLS FOR USING SYMBOL FEATURE ====================
+
+Criterios de elegibilidad:
+  - train >= 252
+  - validation >= 60
+  - test >= 60
+
+Símbolos elegibles: 4692
+Porcentaje sobre todos los símbolos tras limpieza: 69.19%
+
+Resumen de símbolos elegibles:
+         train_rows     val_rows    test_rows    total_rows
+count   4692.000000  4692.000000  4692.000000   4692.000000
+mean    2260.572251   247.940963   442.125533   2950.638747
+std     1658.544167    17.388710    33.038220   1666.824449
+min      254.000000    66.000000    75.000000    566.000000
+25%     1131.000000   252.000000   450.000000   1810.000000
+50%     2471.000000   252.000000   450.000000   3170.500000
+75%     2479.000000   252.000000   450.000000   3181.000000
+max    13337.000000   252.000000   450.000000  14039.000000
+
+Top 10 símbolos elegibles con más filas totales:
+        train_rows  val_rows  test_rows  total_rows
+Symbol                                             
+ibm          13337       252        450       14039
+ge           13336       252        450       14038
+ed           11353       252        450       12055
+pg           11353       252        450       12055
+ko           11353       252        450       12055
+mrk          11353       252        450       12055
+nav          11353       252        450       12055
+dte          11353       252        450       12055
+mmm          11353       252        450       12055
+cat          11353       252        450       12055
+
+Top 10 símbolos elegibles con menos filas en train:
+        train_rows  val_rows  test_rows  total_rows
+Symbol                                             
+jasnw          254       182        389         825
+all_d          254       252        450         956
+itci           254       252        450         956
+fitbi          260       252        450         962
+wfc_r          260       252        450         962
+amc            261       252        450         963
+trch           262       252        450         964
+ribt           263       251        447         961
+hbp            264       251        450         965
+cqh            264       252        450         966
+
+Listado guardado en: C:\Users\guill\Desktop\universidad\cuarto\iag\practicas\practica_5\iage_p5\tmp\eligible_symbols_for_symbol_feature.csv
+
+==================== BINARY TARGET BALANCE BY SPLIT ====================
+
+--- TRAIN ---
+Total: 10668088
+Positivos (1): 5771303 (54.10%)
+Negativos (0): 4896785 (45.90%)
+Clase mayoritaria: 1
+
+--- VALIDATION ---
+Total: 1343108
+Positivos (1): 610788 (45.48%)
+Negativos (0): 732320 (54.52%)
+Clase mayoritaria: 0
+
+--- TEST ---
+Total: 2731933
+Positivos (1): 1580655 (57.86%)
+Negativos (0): 1151278 (42.14%)
+Clase mayoritaria: 1
+
+Resumen comparativo del target binario por split:
+     split    total  positives  negatives  positive_pct  negative_pct  majority_class
+     train 10668088    5771303    4896785      0.540988      0.459012               1
+validation  1343108     610788     732320      0.454757      0.545243               0
+      test  2731933    1580655    1151278      0.578585      0.421415               1

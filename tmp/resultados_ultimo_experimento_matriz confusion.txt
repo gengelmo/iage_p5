@@ -1,0 +1,289 @@
+STEP 6: Creating temporal train/validation/test split...
+26/04/23 22:14:41 WARN SparkStringUtils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
+  Train size: 10451438
+  Validation size: 1321792
+  Test size: 2675824
+
+STEP 6.5: Evaluating majority-class baseline...
+
+STEP 7: Running Logistic Regression grid search with temporal validation...
+
+================================================================================
+LogisticRegression Grid Search with temporal validation
+================================================================================
+Parameter grid size: 6 combinations
+26/04/23 22:31:40 WARN InstanceBuilder: Failed to load implementation from:dev.ludovic.netlib.blas.JNIBLAS
+
+STEP 7.5: Detailed evaluation for best Logistic Regression...
+
+================================================================================
+DETAILED CLASSIFICATION REPORT - VALIDATION_LOGISTIC_REGRESSION
+================================================================================
+Total rows: 1321792
+Predicted positives: 1164622 (88.11%)
+Predicted negatives: 157170 (11.89%)
+/home/vagrant/spark-env/lib/python3.13/site-packages/pyspark/sql/context.py:157: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+  warnings.warn(
+
+Confusion matrix:
+[[100745. 619435.]
+ [ 56425. 545187.]]
+
+Class 1 metrics:
+  Precision(1): 0.4681
+  Recall(1): 0.9062
+  F1(1): 0.6173
+
+Class 0 metrics:
+  Precision(0): 0.6410
+  Recall(0): 0.1399
+  F1(0): 0.2297
+
+Balanced accuracy: 0.5230
+
+================================================================================
+DETAILED CLASSIFICATION REPORT - TEST_LOGISTIC_REGRESSION
+================================================================================
+Total rows: 2675824
+Predicted positives: 2305495 (86.16%)
+Predicted negatives: 370329 (13.84%)
+
+Confusion matrix:
+[[ 186860.  942552.]
+ [ 183469. 1362943.]]
+
+Class 1 metrics:
+  Precision(1): 0.5912
+  Recall(1): 0.8814
+  F1(1): 0.7077
+
+Class 0 metrics:
+  Precision(0): 0.5046
+  Recall(0): 0.1654
+  F1(0): 0.2492
+
+Balanced accuracy: 0.5234
+
+STEP 8: Running Random Forest Classifier grid search with temporal validation...
+
+================================================================================
+RandomForestClassifier Grid Search with temporal validation
+================================================================================
+26/04/23 23:49:25 WARN DAGScheduler: Broadcasting large task binary with size 1045.5 KiB
+26/04/23 23:51:13 WARN DAGScheduler: Broadcasting large task binary with size 1823.5 KiB
+26/04/23 23:53:24 WARN DAGScheduler: Broadcasting large task binary with size 3.3 MiB
+26/04/23 23:56:16 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/23 23:56:29 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/23 23:56:40 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/23 23:56:51 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/23 23:57:02 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/23 23:59:49 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/24 00:00:08 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/24 00:00:25 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/24 00:00:42 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/24 00:00:58 WARN DAGScheduler: Broadcasting large task binary with size 2.1 MiB
+26/04/24 00:28:50 WARN DAGScheduler: Broadcasting large task binary with size 1220.8 KiB
+26/04/24 00:31:22 WARN DAGScheduler: Broadcasting large task binary with size 2.2 MiB
+26/04/24 00:34:53 WARN DAGScheduler: Broadcasting large task binary with size 4.1 MiB
+26/04/24 00:37:59 WARN DAGScheduler: Broadcasting large task binary with size 1141.7 KiB
+26/04/24 00:39:32 WARN DAGScheduler: Broadcasting large task binary with size 7.8 MiB
+26/04/24 00:43:35 WARN DAGScheduler: Broadcasting large task binary with size 2.2 MiB
+26/04/24 00:45:49 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:46:12 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:46:31 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:46:50 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:47:08 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:49:52 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:50:25 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:50:57 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:51:27 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:51:58 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+
+STEP 8.5: Detailed evaluation for best Random Forest Classifier...
+
+================================================================================
+DETAILED CLASSIFICATION REPORT - VALIDATION_RANDOM_FOREST
+================================================================================
+26/04/24 00:55:03 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:55:21 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+Total rows: 1321792
+Predicted positives: 1115011 (84.36%)
+Predicted negatives: 206781 (15.64%)
+26/04/24 00:55:38 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+
+Confusion matrix:
+26/04/24 00:55:42 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+[[124115. 596065.]
+ [ 82666. 518946.]]
+
+Class 1 metrics:
+  Precision(1): 0.4654
+  Recall(1): 0.8626
+  F1(1): 0.6046
+
+Class 0 metrics:
+  Precision(0): 0.6002
+  Recall(0): 0.1723
+  F1(0): 0.2678
+
+Balanced accuracy: 0.5175
+
+================================================================================
+DETAILED CLASSIFICATION REPORT - TEST_RANDOM_FOREST
+================================================================================
+26/04/24 00:56:11 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+26/04/24 00:56:39 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+Total rows: 2675824
+Predicted positives: 2216390 (82.83%)
+Predicted negatives: 459434 (17.17%)
+26/04/24 00:57:07 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+
+Confusion matrix:
+26/04/24 00:57:08 WARN DAGScheduler: Broadcasting large task binary with size 4.9 MiB
+[[ 230191.  899221.]
+ [ 229243. 1317169.]]
+
+Class 1 metrics:
+  Precision(1): 0.5943
+  Recall(1): 0.8518
+  F1(1): 0.7001
+
+Class 0 metrics:
+  Precision(0): 0.5010
+  Recall(0): 0.2038
+  F1(0): 0.2898
+
+Balanced accuracy: 0.5278
+
+STEP 9: Running GBT Classifier grid search with temporal validation...
+
+================================================================================
+GBTClassifier Grid Search with temporal validation
+================================================================================
+Parameter grid size: 4 combinations
+
+STEP 9.5: Detailed evaluation for best GBT Classifier...
+
+================================================================================
+DETAILED CLASSIFICATION REPORT - VALIDATION_GBT
+================================================================================
+Total rows: 1321792
+Predicted positives: 999199 (75.59%)
+Predicted negatives: 322593 (24.41%)
+
+Confusion matrix:
+[[185880. 534300.]
+ [136713. 464899.]]
+
+Class 1 metrics:
+  Precision(1): 0.4653
+  Recall(1): 0.7728
+  F1(1): 0.5808
+
+Class 0 metrics:
+  Precision(0): 0.5762
+  Recall(0): 0.2581
+  F1(0): 0.3565
+
+Balanced accuracy: 0.5154
+
+================================================================================
+DETAILED CLASSIFICATION REPORT - TEST_GBT
+================================================================================
+Total rows: 2675824
+Predicted positives: 2003925 (74.89%)
+Predicted negatives: 671899 (25.11%)
+
+Confusion matrix:
+[[ 315025.  814387.]
+ [ 356874. 1189538.]]
+
+Class 1 metrics:
+  Precision(1): 0.5936
+  Recall(1): 0.7692
+  F1(1): 0.6701
+
+Class 0 metrics:
+  Precision(0): 0.4689
+  Recall(0): 0.2789
+  F1(0): 0.3498
+
+Balanced accuracy: 0.5241
+
+STEP 10: Saving results...
+
+✓ Results saved to resultados/classification_results_20260424_034529.csv
+
+================================================================================
+RESULTS SUMMARY (All Parameter Combinations with Validation/Test Metrics)
+================================================================================
+                model_name  majority_class  val_accuracy    val_f1  val_precision  val_recall  test_accuracy   test_f1  test_precision  test_recall  is_best  regParam  elasticNetParam   val_auc  test_auc  numTrees  maxDepth  maxIter
+0            GBTClassifier             NaN      0.492346  0.458609       0.525714    0.492346       0.562280  0.534896        0.540951     0.562280     True       NaN              NaN  0.526332  0.553484       NaN       5.0     20.0
+1            GBTClassifier             NaN      0.489937  0.456492       0.522017    0.489937       0.561822  0.540533        0.543451     0.561822    False       NaN              NaN  0.519049  0.557578       NaN       5.0     50.0
+2            GBTClassifier             NaN      0.487275  0.444052       0.524093    0.487275       0.565875  0.535606        0.544033     0.565875    False       NaN              NaN  0.522168  0.556946       NaN       3.0     50.0
+3            GBTClassifier             NaN      0.484656  0.429636       0.527301    0.484656       0.572525  0.531517        0.548892     0.572525    False       NaN              NaN  0.523560  0.558147       NaN       3.0     20.0
+4   RandomForestClassifier             NaN      0.486507  0.421094       0.538867    0.486507       0.578274  0.526903        0.554925     0.578274     True       NaN              NaN  0.529045  0.562404      50.0      10.0      NaN
+5   RandomForestClassifier             NaN      0.486205  0.420657       0.538342    0.486205       0.578822  0.527598        0.555802     0.578822    False       NaN              NaN  0.531480  0.563364      20.0      10.0      NaN
+6       LogisticRegression             NaN      0.488679  0.406113       0.562312    0.488679       0.579187  0.514156        0.554622     0.579187     True      0.01              0.0  0.551951  0.543127       NaN       NaN      NaN
+7   RandomForestClassifier             NaN      0.475483  0.373573       0.545924    0.475483       0.584720  0.490968        0.568935     0.584720    False       NaN              NaN  0.547142  0.559660      20.0       5.0      NaN
+8   RandomForestClassifier             NaN      0.475067  0.371127       0.547010    0.475067       0.584024  0.491559        0.566553     0.584024    False       NaN              NaN  0.544401  0.561180      50.0       5.0      NaN
+9       LogisticRegression             NaN      0.478236  0.370104       0.566009    0.478236       0.583157  0.492524        0.563730     0.583157    False      0.10              0.0  0.553171  0.544159       NaN       NaN      NaN
+10      LogisticRegression             NaN      0.476993  0.365874       0.566126    0.476993       0.582365  0.486712        0.562241     0.582365    False      0.01              0.5  0.550486  0.541129       NaN       NaN      NaN
+11      LogisticRegression             NaN      0.465695  0.325083       0.568877    0.465695       0.581934  0.457219        0.572191     0.581934    False      0.01              1.0  0.549353  0.538741       NaN       NaN      NaN
+12        MajorityBaseline             1.0      0.455149  0.284727       0.207160    0.455149       0.577920  0.423331        0.333991     0.577920     True       NaN              NaN       NaN       NaN       NaN       NaN      NaN
+13      LogisticRegression             NaN      0.455149  0.284727       0.207160    0.455149       0.577920  0.423331        0.333991     0.577920    False      0.10              0.5  0.500000  0.500000       NaN       NaN      NaN
+14      LogisticRegression             NaN      0.455149  0.284727       0.207160    0.455149       0.577920  0.423331        0.333991     0.577920    False      0.10              1.0  0.500000  0.500000       NaN       NaN      NaN
+
+================================================================================
+BEST MODELS (selected by Validation F1)
+================================================================================
+
+✓ Majority Baseline:
+  Majority class: 1.0
+  Validation Accuracy: 0.4551
+  Validation F1: 0.2847
+  Validation Precision: 0.2072
+  Validation Recall: 0.4551
+  Test Accuracy: 0.5779
+  Test F1: 0.4233
+  Test Precision: 0.3340
+  Test Recall: 0.5779
+
+✓ Best Logistic Regression:
+  Validation Accuracy: 0.4887
+  Validation F1: 0.4061
+  Validation Precision: 0.5623
+  Validation Recall: 0.4887
+  Validation AUC: 0.5520
+  Test Accuracy: 0.5792
+  Test F1: 0.5142
+  Test Precision: 0.5546
+  Test Recall: 0.5792
+  Test AUC: 0.5431
+  Parameters: regParam=0.01, elasticNetParam=0.0
+
+✓ Best Random Forest Classifier:
+  Validation Accuracy: 0.4865
+  Validation F1: 0.4211
+  Validation Precision: 0.5389
+  Validation Recall: 0.4865
+  Validation AUC: 0.5290
+  Test Accuracy: 0.5783
+  Test F1: 0.5269
+  Test Precision: 0.5549
+  Test Recall: 0.5783
+  Test AUC: 0.5624
+  Parameters: numTrees=50.0, maxDepth=10.0
+
+✓ Best GBT Classifier:
+  Validation Accuracy: 0.4923
+  Validation F1: 0.4586
+  Validation Precision: 0.5257
+  Validation Recall: 0.4923
+  Validation AUC: 0.5263
+  Test Accuracy: 0.5623
+  Test F1: 0.5349
+  Test Precision: 0.5410
+  Test Recall: 0.5623
+  Test AUC: 0.5535
+  Parameters: maxDepth=5.0, maxIter=20.0

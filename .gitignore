@@ -1,5 +1,3 @@
 data/**
 !data/README.md
-resultados/**
-!resultados/README.md
 .venv/
