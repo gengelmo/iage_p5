@@ -1,0 +1,9 @@
+model_name,regParam,elasticNetParam,cv_rmse_avg,test_rmse,test_mae,test_r2,is_best,maxIter
+LinearRegression,0.01,0.5,0.13108860424502403,,,,False,
+LinearRegression,0.01,1.0,0.13111977835355662,,,,False,
+LinearRegression,0.1,0.5,0.13111977835355662,,,,False,
+LinearRegression,0.1,1.0,0.13111977835355662,,,,False,
+GeneralizedLinearRegression,0.01,,0.13089298674617747,,,,False,50.0
+GeneralizedLinearRegression,0.01,,0.13089298674617747,,,,False,100.0
+GeneralizedLinearRegression,0.1,,0.13093041267092667,,,,False,50.0
+GeneralizedLinearRegression,0.1,,0.13093041267092667,,,,False,100.0

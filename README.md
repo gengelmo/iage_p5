@@ -2,7 +2,7 @@
 
 ## Cómo ejecutar
 
-1. Iniciar la máquina virtual de la práctica 4.
+1. Iniciar la máquina virtual de la práctica 4 (tiene que tener hadoop, los scripts en el $PATH, en entrono de python creado...).
 
 2. Una vez iniciada, copiar el contenido de la práctica 5 en el $HOME de master
     Para ello, primero sacamos la ssh-config de master
@@ -10,6 +10,7 @@
     vagrant ssh-config > ssh-config
     ```
     Y después se copia la carpeta de la práctica 5 dentro.
+
     [!Warning] Importante asegurar se de que la ruta a la carpeta de la práctica 5 está bien metida.
     ```sh
     scp -rF ssh_config RUTA_A_LA_CARPETA_DE_LA_P5 master:~/iage_prac_5
