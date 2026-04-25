@@ -11,7 +11,7 @@
     ```
     Y después se copia la carpeta de la práctica 5 dentro.
 
-    [!Warning]
+    [!WARNING]
     Importante asegurar se de que la ruta a la carpeta de la práctica 5 está bien metida.
 
     ```sh
