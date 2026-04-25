@@ -11,8 +11,9 @@
     ```
     Y después se copia la carpeta de la práctica 5 dentro.
 
-    > [!Warning]
-    > Importante asegurar se de que la ruta a la carpeta de la práctica 5 está bien metida.
+    [!Warning]
+    Importante asegurar se de que la ruta a la carpeta de la práctica 5 está bien metida.
+
     ```sh
     scp -rF ssh_config RUTA_A_LA_CARPETA_DE_LA_P5 master:~/iage_prac_5
     ```
