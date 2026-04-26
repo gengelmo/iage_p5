@@ -1,3 +1,4 @@
+# %%
 import os
 from pathlib import Path
 
@@ -621,6 +622,6 @@ def main() -> None:
 	analyze_binary_target_balance_by_split(dataframe)
 	
 
-
+# %%
 if __name__ == "__main__":
 	main()

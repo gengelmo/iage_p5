@@ -1,3 +1,12 @@
 data/**
 !data/README.md
 .venv/
+
+**/memoria/*
+!**/memoria/*.tex
+!**/memoria/**/*.tex
+!**/memoria/**/*.pdf
+!**/memoria/**/*.png
+!**/memoria/graphicx/
+!**/memoria/graphicx/**
+
